@@ -1,5 +1,5 @@
 import sys
-import json
+import myjson
 
 def validate_json_syntax(json_str):
     try:
