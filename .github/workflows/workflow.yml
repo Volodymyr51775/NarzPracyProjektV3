@@ -28,7 +28,7 @@ jobs:
         pip install pyinstaller argparse pyyaml xmltodict PyQt5 
 
     - name: Build project
-      run: pyinstaller --nonconsole --onefile final_user_interf.py
+      run: pyinstaller --noconsole --onefile final_user_interf.py
 
     - name: Upload artifact
       uses: actions/upload-artifact@v3
