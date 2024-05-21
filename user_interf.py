@@ -1,8 +1,20 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QFileDialog
+from PyQt5.QtCore import QRunnable, QThreadPool, pyqtSlot
 import json
 import yaml
 import xml.etree.ElementTree as ET
+
+class TaskRunner(QRunnable):
+    def __init__(self, task, *args, **kwargs):
+        super().__init__()
+        self.task = task
+        self.args = args
+        self.kwargs = kwargs
+
+    @pyqtSlot()
+    def run(self):
+        self.task(*self.args, **self.kwargs)
 
 
 class UserInterface(QMainWindow):
@@ -10,8 +22,8 @@ class UserInterface(QMainWindow):
         super().__init__()
         self.setWindowTitle("User Interface Program")
         self.layout = QVBoxLayout()
-        self.label = QLabel("Loaded data:")
-        self.layout.addWidget(self.label)
+        self.data_label = QLabel("Loaded data:")
+        self.layout.addWidget(self.data_label)
         self.load_button = QPushButton("Load data")
         self.load_button.clicked.connect(self.load_data)
         self.layout.addWidget(self.load_button)
@@ -25,7 +37,8 @@ class UserInterface(QMainWindow):
     def load_data(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select file", "", "JSON Files (*.json);;YAML Files (*.yml *.yaml);;XML Files (*.xml)")
         if file_path:
-            self.read_data(file_path)
+            worker = TaskRunner(self.read_data, file_path)
+            QThreadPool.globalInstance().start(worker)
 
     def read_data(self, file_path):
         if file_path.endswith(".json"):
@@ -56,15 +69,16 @@ class UserInterface(QMainWindow):
         return root
 
     def display_data(self, data):
-        self.label.setText(f"Loaded data:\n{data}")
+        self.data_label.setText(f"Loaded data:\n{data}")
 
     def save_data(self):
         file_path, _ = QFileDialog.getSaveFileName(self, "Save as", "", "JSON Files (*.json);;YAML Files (*.yml);;XML Files (*.xml)")
         if file_path:
-            self.write_data(file_path)
+            worker = TaskRunner(self.write_data, file_path)
+            QThreadPool.globalInstance().start(worker)
 
     def write_data(self, file_path):
-        data = self.label.text().split("\n")[-1]
+        data = self.data_label.text().split("\n")[-1]
 
         if file_path.endswith(".json"):
             self.save_json_data(data, file_path)
